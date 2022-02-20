@@ -1,0 +1,755 @@
+---
+title: "Capstone Project_Bellabeat"
+author: "Uriel Ulloa"
+date: "11/4/2021"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+<style>
+body {
+text-align: justify}
+</style>
+
+## Presentation
+
+The following study is made for academic purposes. This is a Capstone Project for
+the Google Data Analysis Professional Certificate, in which the six steps of the
+Data Analysis Process are used. 
+
+**Title:** Google Data Analysis Capstone Project: Bellabeat Case Study  
+**Author:** Uriel Ulloa  
+**Date:** November 4th 2021  
+
+
+# Bellabeat: How Can A Wellness Technology Company Play It Smart?
+
+### *PHASE 1: ASK* 
+***
+
+#### **1.1.General Background**  
+
+Founded in 2013, by Urška Sršen and Sando Mur, Bellabeat is a high-tech company which aim to empower women with knowledge about their own health and habits offering them health focused smart products. 
+For more information, please click the following link: <https://bellabeat.com/about/>  
+From that point forward the company has grown rapidly and quickly positioned itself opening offices worldwide, having their multiple products in the catalogue of many online retailers and in their own e-commerce platform (for more information click the link to their website).  
+Chief Creative Officer, Urška Sršen would like to leverage all the consumer data available and gain insight on how people are using their smart devices (FitBit Fitness Tracker Data) in order to generate data-driven recommendations for future marketing strategies
+
+***
+
+#### **1.2.Project Objectives**  
+
+1.	Identify the trends in smart devices usage. 
+2.	Generate insights about the applicability to Bellabeat customers, in particular FitBit Fitness device. 
+3.	Deliver recommendations to the marketing team on how could the findings could improve the current campaigns. 
+
+***
+
+#### **1.3.Deliverables**  
+
+1.	Business Task summary 
+2.	Description of all the data used
+3.	Data cleaning log
+4.	Analysis’s summary
+5.	Supporting and compelling visualizations
+6.	Present key findings
+7.	Recommendations based on findings. 
+
+***
+
+#### **1.4.Business Task**  
+
+Analyze smart device usage data in to gain insight about consumer behavior trends and then apply the findings to Bella Beat FitBit Fitness Tracker Data in order to make data-driven decisions in marketing strategies. 
+
+***
+
+#### **1.5.Key Stakeholder**  
+
+•	**Urška Sršen:** Bellabeat’s cofounder and Chief Creative Officer. She is the one who proposed the project and the most interested in the results.  
+•	**Sando Mur:** Mathematician and Bellabeat’s cofounder; key member of the Bellabeat executive team.  
+•	**BellaBeat Marketing Analytics Team:** Team of data analyst working on collecting, analyzing, reporting and conducting the project.  
+•	**Bellabeat Marketing Strategies Team:** Most likely the audience wwich is going to receive the resultsm findings and recommendations of the project in order to apply it to new marketing campaigns.  
+
+### *PHASE 2: PREPARE  *
+
+***
+
+#### **2.1.Data's information**  
+
+•	*FitBit Fitness Tracker Data* is an open-source data collection uploaded by 
+*Möbius*, which was last updated on December 2020. Check out the [FitBit Fitness Tracker Dataset](https://www.kaggle.com/arashnic/fitbit) on kaggle's community to learn more.  
+•	The data set is stored in 18 CSV files that have information about *Daily Activities*, *Heart Rates*, *Burned Calories*, and *Sleep* sleep patterns.  
+•	Datasets are generatedd in 2016, by respondents to a distributed survey via Amazon Mechanical Turk between March 12th to May 12th.  
+•	Thirty (30) eligible Fitbit users consented to the submission of personal tracker
+data.  
+
+***
+
+#### **2.2.Limitations of the data**  
+
+•	As stated before, the data was generated in 2016, it's been five year since then, 
+when people may have changed their behavior when it comes to health care.   
+•	There is no possible way to guarantee the integrity and accuracy of the data collected, hence it might be safe to assume data could be biased in some way or another.  
+•	The sample size of 30 users is too low to apply the results to a population. Even though multiple (thousands) of records exists, it's important to keep in mind, that came from just 30 individuals. 
+
+***
+
+#### **2.3.Does the data ROCC?**  
+
+ROOCC           MEASURE   COMMENT
+---------       --------- ------------------------------------------------------------
+Reliable        LOW       Thirty individuals doesn't make up for a reliable result
+Original        LOW       Data collected is from an external source, Amazon Mechanical Turk, a-third party provider
+Comprehensive   LOW       Metadata about the tables provided is not stated 
+Current         LOW       Data is 5 years old, which might differ from current information
+Cited           MED       Amazon Mechanicl Turk collected the information themselves, information about their sources, parameters and method is not stated
+
+***
+ 
+#### **2.4.Data selected for analysis**
+
+The following files were selected based on a most relevant criteria for the analysis purposes: 
+
+* Fitbase Data 
+    + `dailyActivity_merged.csv`
+    + `heartrate_seconds_merged.csv`
+    + `minuteMETsNarrow_merfed.csv`
+    + `sleepDay-merged.csv`
+    + `weightLogInfo_meged.csv`
+    
+***
+
+### *PHASE 2: PROCESS  *
+
+The tool applied for data and statistical analysis is R programming language, and R studio as the Integrated Development Environment (IDE). Later on R Markdown is used for reporting. 
+
+***
+
+#### **3.1. Setting up the environment**
+
+* The following packaged are used for: 
+    + `tidyverse`: Designed for data import, tidying, manipulation, visualization, and programming.
+    + `lubridate`: Dealing with Dates
+    + `here`: Importing files a little easier
+    + `conflicted`: Handles the ambiguity with functions overlapping
+    + `ggplot2` and `reshape2`: Create visualizations 
+    
+```{r environment}
+library(tidyverse)
+library(here)
+library(lubridate)
+library(plyr)
+library(conflicted)
+library(tidyr)
+library(ggplot2)
+library(reshape2)
+```
+
+Following up is important to set the priority of functions right off the bat with `conflicted`, in order to avoid any code error.
+
+```{r conflicted}
+conflict_prefer("count", "plyr")
+conflict_prefer("here", "here")
+conflict_prefer("summarize", "dplyr")
+conflict_prefer("mutate", "dplyr")
+conflict_prefer("filter", "dplyr")
+conflict_prefer("rename", "dplyr")
+```
+
+Now having the land prepared, data cleaning is on the way. 
+
+***
+
+#### **3.2. Importing the data frames**
+
+Using the following chunk's code, all the data necessary for the analysis is imported. 
+
+```{r import}
+#----------------------------Daily Activity Data frame -----------------------------
+
+daily_act_df <- read.csv(here("FitBit_Fitness_Tracker_Data_CS",
+                              "dailyActivity_merged.csv"))
+
+#---------------------------------Sleep  Data frame ----------------------------------
+
+sleep_day_df <- read.csv(here("FitBit_Fitness_Tracker_Data_CS",
+                              "sleepDay_merged.csv"))
+
+#-----------------------------Heart Rate  Data frame ----------------------------------
+
+heartrate_df <- read.csv(here("FitBit_Fitness_Tracker_Data_CS",
+                              "heartrate_seconds_merged.csv"))
+
+#---------------------------------Weight Data frame ----------------------------------
+
+weight_df <- read.csv(here("FitBit_Fitness_Tracker_Data_CS",
+                              "weightLogInfo_merged.csv"))
+
+#------------------------------------METs Data frame ----------------------------------
+
+mets_df <- read.csv(here("FitBit_Fitness_Tracker_Data_CS",
+                           "minuteMETsNarrow_merged.csv"))
+
+#----------------------------Minute Sleep Data frame ----------------------------------
+
+min_sleep_df <- read.csv(here("FitBit_Fitness_Tracker_Data_CS",
+                         "minuteSleep_merged.csv"))
+
+
+```
+
+#### **3.3. Understand the data**
+
+Is important to preview the data we are dealing with as we get more comfortable and familiarize with it, in order to draw early conclusions. For this the `tible` function is used. 
+
+```{r preview}
+tibble(daily_act_df)
+tibble(sleep_day_df)
+tibble(heartrate_df)
+tibble(weight_df)
+tibble(mets_df)
+tibble(min_sleep_df)
+```
+
+As a summary: 
+
+Data Frame       #Observations #Fields
+---------------- ------------- ------------------------------------------------------
+Daily Activity   940           15
+Sleep Day        413           5
+Heart Rate       2,483,658     3
+Weight           67            8
+METs             1,325,580     3
+Sleep Mins       188,521       4  
+
+**Findings:**
+It's important to notice that there are significant gaps between the data frames, this is because the entry logs or observations are measured in different units, for example the *Daily Activity* is in days, *Sleep Mins* in minutes, and *Heart Rate* in seconds, hence there is inconsistency in the data. 
+
+Note that the data type in all fields is all right, except for `Date`. This particular filed is formatted as a `chr` which is characters, hence it has to be converted to `datetime64` format for fuurther analysis. 
+
+***
+
+#### **3.4. Checking for any null values**
+
+This code's chunk checks for any nulls values in all data frames. 
+
+```{r nulls}
+#Daily Activity
+na_count <- count(is.na(daily_act_df) == TRUE)
+na_daily_df <- data.frame(na_count)
+na_daily_df[na_daily_df == FALSE] <- 0
+glimpse(na_daily_df)
+#Sleep Day
+na_count <- count(is.na(sleep_day_df) == TRUE)
+na_sleep_df <- data.frame(na_count)
+na_sleep_df[na_sleep_df == FALSE] <- 0
+glimpse(na_sleep_df)
+#Heart Rate
+na_count <- count(is.na(heartrate_df) == TRUE)
+na_heartrate_df <- data.frame(na_count)
+na_heartrate_df[na_heartrate_df == FALSE] <- 0
+glimpse(na_heartrate_df)
+#Weight
+na_count <- count(is.na(weight_df) == TRUE)
+na_weight_df <- data.frame(na_count)
+na_weight_df[na_weight_df == FALSE] <- 0
+glimpse(na_weight_df)
+#METs
+na_count <- count(is.na(mets_df) == TRUE)
+na_mets_df <- data.frame(na_count)
+na_mets_df[na_mets_df == FALSE] <- 0
+glimpse(na_mets_df)
+#Minutes Sleep
+na_count <- count(is.na(min_sleep_df) == TRUE)
+na_min_sleep_df <- data.frame(na_count)
+na_min_sleep_df[na_min_sleep_df == FALSE] <- 0
+glimpse(na_min_sleep_df)
+```
+
+**Findings:**Results show that there are no missing or null values.
+
+***
+
+#### **3.5. Identifying unique ID's**
+
+Source information stated that the information is collected from thirty (30) individuals records on their activities, let's find out is that is a consistent face value. 
+
+```{r Unique Id}
+#Daily Activity
+nrows <- c(nrow(daily_act_df),nrow(sleep_day_df),nrow(heartrate_df),nrow(weight_df),
+          nrow(mets_df),nrow(min_sleep_df))
+nuniqueId <- c(n_distinct(daily_act_df$Id),n_distinct(sleep_day_df$Id),
+               n_distinct(heartrate_df$Id),n_distinct(weight_df$Id),
+               n_distinct(mets_df$Id),n_distinct(min_sleep_df$Id))
+data_frames <- c('Daily Activity', 'Sleep Day', 'Heart Rate', 'Weight', 'METs', 'Sleep Mins')
+
+id_df <- data.frame(data_frames, nuniqueId, nrows)
+tibble(id_df)
+
+```
+
+**Findings:**All data frames share the same inconsistency regarding their number of unique ID's, given none has the 30 individuals sample size. Note that the `Weight` dataset only has 8 individual's records and 64 observations, hence it's not useful for further analysis. 
+
+***
+
+#### **3.6. Manipulation and cleaning of the data**
+
+Every data frame requires converting the `Date` field which is in `chr`, type into `datetime64` type, and then to `yyyy - mm- dd` format, to give consistency throught the whole dataset. 
+
+***
+
+##### **3.6.1. Daily Activity DataFrame**
+
+```{r Daily Activity Prep}
+#Convert Activity Date to Datetime time type
+daily_act_clean <- daily_act_df %>% 
+  mutate(fixed_date = mdy(ActivityDate))
+#Add day of the week for further analysis 
+daily_act_clean$week_day <- weekdays(daily_act_clean$fixed_date)
+
+#Reorganize the order of the dataframe
+drops <- c("ActivityDate")
+daily_act_clean <- daily_act_clean[ , !(names(daily_act_clean) %in% drops)]
+daily_act_clean <- daily_act_clean[,c("Id","fixed_date","week_day","TotalSteps",
+                                      "TotalDistance","TrackerDistance", 
+                                      "LoggedActivitiesDistance", 
+                                      "VeryActiveDistance",
+                                      "ModeratelyActiveDistance", 
+                                      "LightActiveDistance",
+                                      "SedentaryActiveDistance", 
+                                      "VeryActiveMinutes", "FairlyActiveMinutes",
+                                      "LightlyActiveMinutes", "SedentaryMinutes", 
+                                      "Calories")]
+
+#Calculate the time logged by adding up the activities and sedentary mins
+daily_act_clean <- daily_act_clean %>% 
+  mutate(time_logged_mins = VeryActiveMinutes + FairlyActiveMinutes +
+           LightlyActiveMinutes + SedentaryMinutes)
+
+#Transform the mins to hours
+daily_act_clean <- daily_act_clean %>% 
+  mutate(time_logged_hours = round((time_logged_mins/60),digit = 2))
+tibble(daily_act_clean)
+
+```
+
+***
+
+##### **3.6.2. Sleep Day DataFrame**
+
+```{r Sleep Day Prep}
+
+#Transform the date string to a properly mdy format
+sleep_clean <- sleep_day_df %>%
+  mutate(date_time = mdy_hms(SleepDay))
+
+sleep_clean$date_time <- ymd(sleep_clean$date_time)
+
+#Calculate the time a person spent in bed while being awake
+sleep_clean <- sleep_clean %>% 
+  mutate(totaltime_awake = TotalTimeInBed - TotalMinutesAsleep)
+
+#Identify the week days in dates for further analysis in patterns 
+sleep_clean$week_day <- weekdays(sleep_clean$date_time)
+
+#Drop unnecessary data and reorganize the dataframe
+drops <- c("SleepDay")
+sleep_clean <- sleep_clean[ , !(names(sleep_clean) %in% drops)]
+sleep_clean <- sleep_clean[,c("Id","date_time","week_day","TotalMinutesAsleep",
+                              "TotalTimeInBed", "totaltime_awake",
+                              "TotalSleepRecords")]
+head(sleep_clean)
+                           
+```
+
+***
+
+##### **3.6.3. Heart Rate DataFrame**
+
+```{r Heart Rate}
+
+#Transform the date string to a properly mdy-hms format
+heartrate_clean <- heartrate_df %>%
+  mutate(date_time = mdy_hms(Time))
+
+#Separate the date and time columns to individual ones
+heartrate_clean <- heartrate_clean %>% 
+  separate(date_time, into = c("date", "time"),sep = " ")
+
+heartrate_clean$date <- ymd(heartrate_clean$date)
+heartrate_clean$time <- hms(heartrate_clean$time)
+
+#Identify the week days in dates for further analysis in patterns 
+heartrate_clean$week_day <- weekdays(heartrate_clean$date)
+
+#Drop unnecessary data and reorganizae the dataframe
+drops <- c("Time")
+heartrate_clean <- heartrate_clean[ , !(names(heartrate_clean) %in% drops)]
+heartrate_clean <- heartrate_clean[,c("Id","date","time","week_day","Value")]
+head(heartrate_clean) 
+                           
+```
+
+***
+
+##### **3.6.4. Weight DataFrame**
+
+```{r Weight Prep}
+#Transform the date string to a properly mdy-hms format
+weight_clean <- weight_df %>%
+  mutate(date_time = mdy_hms(Date))
+
+#Separate the date and time columns to individual ones
+weight_clean <- weight_clean %>% 
+  separate(date_time, into = c("date", "time"),sep = " ")
+
+weight_clean$date <- ymd(weight_clean$date)
+weight_clean$time <- hms(weight_clean$time)
+
+#Identify the week days in dates for further analysis in patterns 
+weight_clean$week_day <- weekdays(weight_clean$date)
+
+#Drop unnecessary data and reorganize the dataframe
+drops <- c("Date")
+weight_clean <- weight_clean[ , !(names(weight_clean) %in% drops)]
+weight_clean <- weight_clean[,c("Id","date","time","week_day",
+                                "WeightKg","WeightPounds",
+                                "Fat","BMI","IsManualReport")]
+head(weight_clean)     
+```
+
+***
+
+##### **3.6.5. METs DataFrame**
+
+```{r METs Prep}
+#Transform the date string to a properly mdy-hms format
+mets_clean <- mets_df %>%
+  mutate(date_time = mdy_hms(ActivityMinute))
+
+#Separate the date and time columns to individual ones
+mets_clean <- mets_clean %>% 
+  separate(date_time, into = c("date", "time"),sep = " ")
+mets_clean$date <- ymd(mets_clean$date)
+mets_clean$time <- hms(mets_clean$time)
+
+#Identify the week days in dates for further analysis in patterns 
+mets_clean$week_day <- weekdays(mets_clean$date)
+
+#Drop unnecessary data and reorganize the dataframe
+drops <- c("ActivityMinute")
+mets_clean <- mets_clean[ , !(names(mets_clean) %in% drops)]
+mets_clean <- mets_clean[,c("Id","date","time","week_day","METs")]
+head(mets_clean)  
+```
+
+***
+##### **3.6.6. Sleep Cycle DataFrame**
+
+This data frame contains information about sleep patterns of the individuals, defined in values *1,2 and 3*, any entry for each value represents a minute of sleep. 
+Due to the ambiguity of the data is difficult to interpret what this pattern stands for, but it might follow the logic of the **SLEEP CLYCLES**
+
+Michael Grandner, MD, director of the Sleep and Health Research Program at the University of Arizona in Tucson describes each cycle as: 
+
+>(1)Light Sleep: "Shallow and not restful. It’s when your body processes memories and emotions and your metabolism regulates itself"
+
+>(2)Deep Sleep: "The thinking parts of the brain are largely offline. Your muscles are very relaxed. You’re not dreaming at all during this time. Your body is doing a lot of rebuilding and repairing"
+
+>(3)REM Sleep: REM is when most dreaming happens and your eyes move rapidly in different directions (hence the name). Heart rate increases and your breathing becomes more irregular.
+
+Check out this amazing [blog](https://blog.fitbit.com/sleep-stages-explained/) by Danielle Kosecki (source) for mor info. 
+
+```{r Sleep Cycle Prep}
+#Verify if values correspond to sleeps cycles 
+count_cycle <- count(min_sleep_df$value)
+sleep_cycle <- data.frame(count_cycle)
+conflict_prefer("mutate", "dplyr")
+sleep_cycle <- sleep_cycle %>% 
+  mutate(percentage = (sleep_cycle/nrow(min_sleep_df))*100)
+tibble(sleep_cycle)
+
+#Transform the date string to a properly mdy-hms format
+min_sleep_clean <- min_sleep_df %>%
+  mutate(date_time = mdy_hms(date))
+
+#Separate the date and time columns to individual ones
+min_sleep_clean <- min_sleep_clean %>% 
+  separate(date_time, into = c("date", "time"),sep = " ")
+
+min_sleep_clean$date <- ymd(min_sleep_clean$date)
+min_sleep_clean$time <- hms(min_sleep_clean$time)
+
+#Identify the week days in dates for further analysis in patterns 
+min_sleep_clean$week_day <- weekdays(min_sleep_clean$date)
+
+#Replace values with sleep cycles names
+min_sleep_clean[min_sleep_clean == 1] <- "Light Sleep"
+min_sleep_clean[min_sleep_clean == 2] <- "Deep Sleep"
+min_sleep_clean[min_sleep_clean == 3] <- "REM Sleep"
+
+#Identify the number of observations per day for evvery user (ID)
+date_sleep <- ddply(min_sleep_clean, "Id",summarize, number_days = n_distinct(date))
+
+#Count the frequency of each sleep cycle for every user (ID)
+conflict_prefer("count", "dplyr")
+long_sleep_cycle <- min_sleep_clean %>% 
+  group_by(logId, date, Id) %>% 
+  count(value, sort = TRUE)
+
+#Transform the data from long format to wide format for a better analysis and 
+#matching with de days data previously collected
+wide_sleep <- long_sleep_cycle %>% 
+  pivot_wider(names_from = value, values_from = n)
+
+wide_sleep[is.na(wide_sleep)] <- 0
+sleep_cycle_clean <- wide_sleep
+
+summary_long_sleep <- min_sleep_clean %>% 
+  count(Id, value, sort = TRUE)
+
+#Transform the data from long format to wide format for a better analysis and 
+#matching with de days data previously collected
+summary_wide_sleep <- long_sleep_cycle %>% 
+  pivot_wider(names_from = value, values_from = n)
+
+#Joining both days and frequency of sleep cycles.
+summary_sleep <- merge(date_sleep, summary_wide_sleep, by= c("Id"))
+
+#Adding more information such as average sleep cycle time in minutes and hours
+#per day
+summary_sleep <- summary_sleep %>% 
+  mutate(avg_light = `Light Sleep`/number_days, avg_deep = `Deep Sleep`/number_days,
+         avg_rem = `REM Sleep`/number_days)
+summary_sleep <- summary_sleep %>% 
+  mutate(total_sleep = round((avg_light + avg_deep + avg_rem), digit = 2))
+summary_sleep <- summary_sleep %>% 
+  mutate(hours_sleep = total_sleep/60)
+tibble(summary_sleep)
+
+#Tryring figure out sleep patterns through days of the week 
+min_sleep_clean <- min_sleep_clean %>%
+  mutate(mins = 1)
+
+min_sleep_clean <- min_sleep_clean %>% 
+  group_by(logId, date, Id) %>% 
+  summarize(total_mins = sum(mins))
+
+min_sleep_clean$week_day <- weekdays(min_sleep_clean$date)
+tibble(min_sleep_clean)
+```
+
+***
+### *PHASE 4: ANALYZE  *
+
+It's time to use statistics in order to find some patterns on the users behavior for each data frame. 
+
+##### **4.1. Daily Activity Analysis**
+
+```{r Daily Activity Analysis}
+daily_act_clean %>%  
+  select(TotalSteps,TotalDistance,VeryActiveMinutes, FairlyActiveMinutes,
+         SedentaryMinutes,Calories, time_logged_mins, time_logged_hours ) %>%
+  summary()
+
+```
+
+* ***Findings:***
+    + The average female user take 7,638 steps, which is translated in 5.2Km of distance. According an study adults should aim to walk 10,000 steps or 8km. Check out [Medical News Today Newsletter](https://www.medicalnewstoday.com/articles/how-many-steps-should-you-take-a-day) to learn more. 
+    + On average, females FitBit users burns 2,304 calories per day, value that falls in the range provided by the [U.S. Department of Health and Human Services](https://health.gov/our-work/nutrition-physical-activity/dietary-guidelines/previous-dietary-guidelines/2015), that states an adult woman expends roughly 1,600 to 2,400 calories per day. 
+    + Users spends more time in a sedentary state rather than doing some activity that requires a little bit of stimulus. The average 991.2 sedentary minutes represents the 81.4% of the total registered time, which sounds about right, but according to an study by *American Journal of Epidemiology*, Women who lead a sedentary lifestyle age nearly eight times more than women who are involved in physical work. Find more on [Health Article](https://www.hindustantimes.com/health-and-fitness/sedentary-lifestyle-and-women-do-some-exercise-daily-else-you-ll-age-faster/story-gbDeAzXbSjuGyWaj0f0tCN.html) from Hindustan Times
+
+***
+
+Let's search for patterns throughout weekdays
+
+```{r Daily Activity Analysis WeekDays}
+daily_act_clean %>%  
+  group_by(week_day) %>% 
+  summarize(TotalDistance = mean(TotalDistance), 
+            VeryActiveMinutes = mean(VeryActiveMinutes), 
+            SedentaryMinutes = mean(SedentaryMinutes), Calories = mean(Calories),
+            time_logged_mins  = mean(time_logged_mins))
+```
+
+***
+
+### *PHASE 5: SHARE  *
+
+```{r Heart Rate Analysis}
+#Analyze the heaartrate per hour throughta day
+heartrate_hour <- heartrate_clean %>% 
+  mutate(day_hour = hour(time))
+
+heartrate_hour <- heartrate_hour %>% 
+  group_by(day_hour) %>% 
+  summarize(avg = round(mean(Value),digit = 2))
+
+#Create plot for average HeartRate per Day
+ggplot(data = heartrate_hour, aes(x = day_hour, y = avg,))+
+  geom_line(stat = "identity", color = "red", size = 2)+
+  labs(title = "Average HeartRate per Hour", x= "Time(Hour) of the day", y= "HeartRate", )+
+  geom_area( fill="#69b3a2", alpha=0.4)+
+  geom_point(size=3, color="#69b3a2") +
+  theme(axis.text.x = element_text(angle = 90))+
+  expand_limits(x = 0, y = 0)+
+  geom_hline(yintercept = 86.13, linetype = "dashed", color = "blue")+
+  geom_vline(xintercept = 18, linetype = "dashed", color = "blue")
+```
+
+* ***Findings:***:
+    + The average female user resting heart rates range from 60.23 to 86.13 heart beats per minutes.. 
+    + The lowest value corresponds to hours of the day when users usually are resting or in a slumber, this being 4 AM, meanwhile the highest value is attributes to hours when the body requires more oxygen due to various reasons such as working out, completing fairly/very demanding activities, winch usually happens at 6 PM. 
+    + According to a research led by *Women's Health Initiative *, based on data on 129,135 postmenopausal women. Women that have higher resting hert rates (more than 76bpm) were 26% more likely to have a heart attack or die, from those with the lowest level (less than 62bpm). Find more on [What your heart rate is telling you ](https://www.health.harvard.edu/heart-health/what-your-heart-rate-is-telling-you) from Harvard Health Publishing. 
+     + Based on the aforementioned facts, users does not represent a significant issue on this matter, since their heart rate only raises on average above 80bpm at 6PM. It would be worthwhile to conduct a further investigation on why users heart beat raises at this hour of the day, and which activities are related to this phenomenon. 
+
+
+
+
+***
+
+![Analyze the sleep time throughout a week](C:/Users\pc\Documents\Google Analytics\Case Study\Sleep Cycles.png)
+* ***Findings:***:
+    + Sunday is the day of the week when the average user spend more sleeping time (aprox 446mins/7.8hrs) and in bed (aprox. 8.7hrs), on the other hand on Tuesday users tends to have less sleep time (aprox. 404mins/6.7hrs) and time in bed (aprox. 443min/7.3hrs)   
+    + According to a research led by *Curent Biology* subjects who cuts their sleep, but made up for it on weekends still received aftermath effects. 
+    + This bad habit could result in issues like excess of calories intake after dinner, increased weight, reduced energy expenditure and how the body handles insulin. For more information, please refer to [Weekend catch-up sleep won’t fix the effects of sleep deprivation on your waistline](https://www.health.harvard.edu/blog/weekend-catch-up-sleep-wont-fix-the-effects-of-sleep-deprivation-on-your-waistline-2019092417861). 
+
+***
+```{r Analyze correlation between variables}
+#Merge sleep and activity observations to look for any correlation factor
+daily_act_clean <- rename(daily_act_clean, date = fixed_date )
+sleep_clean <- rename(sleep_clean, date = date_time)
+d_act_sleep_merged <- merge(daily_act_clean, sleep_clean, by = c('Id', 'date'))
+colnames(d_act_sleep_merged)
+
+drops <- c("TrackerDistance", "LoggedActivitiesDistance", "VeryActiveDistance",
+           "ModeratelyActiveDistance", "LightActiveDistance", "SedentaryActiveDistance",
+           "time_logged_mins", "time_logged_hours", "week_day.y", "TotalSleepRecords")
+d_act_sleep_merged <- d_act_sleep_merged[ , !(names(d_act_sleep_merged) %in% drops)]
+colnames(d_act_sleep_merged)
+
+d_act_sleep_merged <- d_act_sleep_merged %>% 
+  filter(TotalMinutesAsleep > 200) %>% 
+  filter(TotalSteps >= 100)
+
+#Looking for the average light sleep time in minutes and hours
+summary_sleep[is.na(summary_sleep)] <- 0
+summary_sleep_cycle <- summary_sleep %>% 
+  select(avg_light, avg_deep, avg_rem) %>%
+  filter(avg_light >200) %>% 
+  summarize(avg_light = (mean(avg_light)/60), avg_deep = (mean(avg_deep)/60), 
+            avg_rem = (mean(avg_rem)/60))
+head(summary_sleep_cycle)
+
+#Preparing Mets Dataframe for merging
+mets_analysis<- mets_clean %>% 
+  group_by(date, Id) %>% 
+  summarize(total_mets = sum(METs))
+head(mets_analysis)
+
+#Merging Activities, METs and Sleep Cycle dataframes
+
+correlation_sleep_cycle <- wide_sleep %>% 
+  filter(`Light Sleep` >200)
+
+df_analysis <- merge(d_act_sleep_merged, correlation_sleep_cycle, by = c('Id', 'date'))
+colnames(df_analysis)
+
+df_analysis <- merge(df_analysis, mets_analysis, by = c('Id', 'date'))
+colnames(df_analysis)
+
+#Dropping unnecessary fields for the analysis
+drops <- c("week_day.x", "TotalMinutesAsleep", "TotalTimeInBed",
+           "totaltime_awake", "logId")
+df_analysis <- df_analysis[ , !(names(df_analysis) %in% drops)]
+colnames(df_analysis)
+
+
+#Creating a Pearson Correlation Matrix
+mydata2 <- df_analysis[, c(3:13)]
+head(mydata2)
+corr_df_analysis <- round(cor(mydata2), 2)
+head(corr_df_analysis)
+
+melted_corr_df_analysis <- melt(corr_df_analysis)
+head(melted_corr_df_analysis)
+
+ggplot(data = melted_corr_df_analysis, aes(Var1, y = Var2, fill = value))+
+  geom_tile()
+
+
+
+# Get lower triangle of the correlation matrix
+get_lower_tri<-function(corr_df_analysis){
+  corr_df_analysis[upper.tri(corr_df_analysis)] <- NA
+  return(corr_df_analysis)
+}
+
+# Get upper triangle of the correlation matrix
+get_upper_tri <- function(corr_df_analysis){
+  corr_df_analysis[lower.tri(corr_df_analysis)]<- NA
+  return(corr_df_analysis)
+}
+
+upper_tri <- get_upper_tri(corr_df_analysis)
+upper_tri
+
+# Melt the correlation matrix
+melted_corr_df_analysis<- melt(upper_tri, na.rm = TRUE)
+# Heatmap
+ggplot(data = melted_corr_df_analysis, aes(Var2, Var1, fill = value))+
+  geom_tile(color = "white")+
+  scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
+                       midpoint = 0, limit = c(-1,1), space = "Lab", 
+                       name="Pearson\nCorrelation") +
+  theme_minimal()+ 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, 
+                                   size = 12, hjust = 1))+
+  coord_fixed()
+
+#Convert the analysis data frame into a CSV file in order to create 
+#visualizations in TABLEU  
+
+write.csv(df_analysis, file = "bellabeat_viz.csv")
+
+```
+
+
+![METs Analysis based on Calories and Activities](C:/Users/pc/Documents/Google Analytics/Case Study/Mets vs Calories 2.png)
+
+* ***Findings:***
+    + There is a positive relationship between the Very Active Minutes and the Calories burned by users, which means the more time users spend in daily doing activities (cleaning, walking the dog, gardening) or daily exercise, leads to a greater amount of calories burned.  
+    + There is negative relationship between the Sedentary Minutes and Total Minutes Asleep. Many research have concluded that sedentary is strongly associated with sleep problems such as insomnia or cases of sleep disturbance, and could be directly involved with issues with the sleep cycles of the users (disturbances in sleep stages). 
+    + Total Distance and variables related to activities, share a strong relationship, which means user have a common pattern of burning calories completing activities like walking or jogging, rather than spending most of this time doing exercises like weight lifting.
+    
+### *PHASE 6: ACT  *
+
+## *Final Conclusions*: 
+
+According to the data provided users spends more time in a sedentary state rather than doing some activity that requires a little bit of stimulus. 
+The average female user resting heart rates range from 60.23 to 86.13 heart beats per minutes.
+Throughout a week, user never meets the required 8 hours of sleeping, and share a common pattern in which they try to recover the cut off sleep time on weekends, resulting in more time in bed, and less time doing activities that could help their calories intake. 
+A good day with full of activities and less sedentary times proves to be beneficial for users sleep cycle, resulting in more deep sleep minutes, which strengthen the immune system and other key bodily processes.
+
+## *Applying trends to Bellabeat customers*
+
+Bellabeat customer are woman who are interested in their health care, that's the main reason for them to purchase this kind of smart devices. The previous statement are mandatory facts that may greatly influence one person habits which directly reflects in their health and well being. As a company committed with our users interests, that's why taking this behavioral data is important in order to develop new features that understand customers needs and helps them fix bad habits and improve their health. 
+
+## *Marketing Strategies*
+
+Creating campaigns that promotes the benefits of a good sleep cycle in our daily life, introducing our customers new features that will help them create a proper sleep schedule and alignment of the circadian rhythm. 
+
+Promote user community activities on weekends, prompting customers performing different light, fair and intense activities, to create awareness of their impact on calories burnt to balance the calories intake. 
+
+
+
+
+
+
+
+
+ 
